@@ -1,0 +1,97 @@
+# .github/workflows/docker-test.yml
+name: Docker Test
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Build and start containers
+      run: docker-compose up --build -d nginx
+
+    - name: Run tests
+      run: |
+        docker-compose up --build tester
+        TEST_EXIT_CODE=$?
+        if [ $TEST_EXIT_CODE -eq 0 ]; then
+          echo "Tests passed" > succeeded
+        else
+          echo "Tests failed" > failed
+        fi
+        exit $TEST_EXIT_CODE
+
+    - name: Upload test result artifact
+      uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: test-result
+        path: |
+          succeeded
+          failed
+
+
+
+
+
+#name: Docker Build and Test
+#
+#on:
+#  push:
+#    branches: [ main ]
+#  pull_request:
+#    branches: [ main ]
+#
+#jobs:
+#  build-and-test:
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#    - name: Checkout code
+#      uses: actions/checkout@v2
+#
+#    - name: Set up Docker Buildx
+#      uses: docker/setup-buildx-action@v1
+#
+#    - name: Cache Docker layers
+#      uses: actions/cache@v2
+#      with:
+#        path: /tmp/.buildx-cache
+#        key: ${{ runner.os }}-buildx-${{ github.sha }}
+#        restore-keys: |
+#          ${{ runner.os }}-buildx-
+#
+#    - name: Build and test with Docker Compose
+#      run: |
+#        docker-compose build
+#        docker-compose up --abort-on-container-exit
+#      env:
+#        COMPOSE_DOCKER_CLI_BUILD: 1
+#        DOCKER_BUILDKIT: 1
+#
+#    - name: Check test results
+#      run: |
+#        EXIT_CODE=$?
+#        if [ $EXIT_CODE -eq 0 ]; then
+#          echo "Tests passed successfully!"
+#          echo "SUCCESS" > succeeded
+#        else
+#          echo "Tests failed with exit code: $EXIT_CODE"
+#          echo "FAIL" > fail
+#        fi
+#
+#    - name: Upload test results
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: test-results
+#        path: |
+#          succeeded
+#          fail
+#        retention-days: 7
+#
+#    - name: Cleanup
+#      if: always()
+#      run: docker-compose down -v
