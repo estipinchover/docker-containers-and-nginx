@@ -1,0 +1,62 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  nginx:
+    build:
+      context: ./nginx
+    ports:
+      - "80:80"
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  tester:
+    build:
+      context: ./tester
+    depends_on:
+      nginx:
+        condition: service_healthy
+
+
+
+#version: '3.8'
+#
+#services:
+#  nginx:
+#    build:
+#      context: ./nginx
+#      dockerfile: Dockerfile
+#    ports:
+#      - "8080:8080"
+#      - "8081:8081"
+#    networks:
+#      - test-network
+#    volumes:
+#      - nginx_logs:/var/log/nginx
+#    healthcheck:
+#      test: ["CMD", "nginx", "-t"]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
+#    restart: unless-stopped
+#
+#  tester:
+#    build:
+#      context: ./tester
+#      dockerfile: Dockerfile
+#    networks:
+#      - test-network
+#    depends_on:
+#      nginx:
+#        condition: service_healthy
+#
+#networks:
+#  test-network:
+#    driver: bridge
+#
+#volumes:
+#  nginx_logs:
